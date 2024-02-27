@@ -6,7 +6,9 @@
 - Install Python 3.11+ (www.python.org)
 - Create Folder where CRL files will be contained
 - Clone Repo to any local destination (https://github.com/nopg/crl2cdp.git)
-    ```git clone https://github.com/nopg/crl2cdp.git```
+    ```
+    git clone https://github.com/nopg/crl2cdp.git
+    ```
     ( If running windows, download .zip from above and extract files instead )
 
 - Create Virtual Environment
@@ -27,12 +29,7 @@
 - Open crl2cdp.py and update required settings
     ```python
     s3_bucket_name = "mybucketname"
-    FILES = [
-        "filename1.txt",
-        "filename2.txt",
-        "filename3.txt",
-        "filename4.txt",
-    ]
+    crl_folder_path = r"c:\CDP"
 
     email_server = "smtp.office365.com"
     email_port = 587
@@ -45,10 +42,10 @@
     ```
     python crl2cdp.py --setup
     ```
-    It will prompt for the following secrets, which you must setup in AWS IAM:
-    aws_access_key_id
-    aws_secret_access_key
-    email_password
+    It will prompt for the following secrets, which you must setup in AWS IAM & Email:
+    - aws_access_key_id
+    - aws_secret_access_key
+    - email_password
 
 
 ## Usage

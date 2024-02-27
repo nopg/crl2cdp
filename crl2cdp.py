@@ -109,13 +109,13 @@ def send_mail(message):
         print(message)
 
 
-def s3_get_bucket_names(s3):
-    buckets = s3.buckets.all()
-    names = []
-    for bucket in buckets:
-        names.append(bucket.name)
+# def s3_get_bucket_names(s3):
+#     buckets = s3.buckets.all()
+#     names = []
+#     for bucket in buckets:
+#         names.append(bucket.name)
 
-    return names
+#     return names
 
 
 def s3_upload(
@@ -137,12 +137,13 @@ def s3_upload(
         for filename in crl_and_crt_files:
             with open(filename, "rb") as data:
                 s3.Bucket(s3_bucket_name).put_object(Key=filename, Body=data)
+                output(f"Uploaded {filename} to S3.")
         # bucket_names = s3_get_bucket_names(s3)
     except ClientError as e:
-        output(f"AWS Login Error: {e}")
+        output(f"AWS Login Error: {e}", logging.error)
         sys.exit(1)
     except NoCredentialsError as e:
-        output(f"Unable to get AWS Credentials, check -g (get secrets)")
+        output(f"Unable to get AWS Credentials, check -g (get secrets)", logging.error)
         sys.exit(1)
 
 
