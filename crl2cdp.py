@@ -116,6 +116,7 @@ def s3_upload(
     """
     Upload CRL Files to S3
     """
+    output("Starting S3 Upload")
     crl_and_crt_files = [
         file for file in os.listdir(crl_folder_path) if file.endswith((".crl", ".crt"))
     ]
@@ -127,7 +128,8 @@ def s3_upload(
         )
         s3 = session.client("s3")
         for filename in crl_and_crt_files:
-            s3.upload_file(filename, s3_bucket_name, filename)
+            file = f"{crl_folder_path}\{filename}"
+            s3.upload_file(file, s3_bucket_name, filename)
             output(f"Uploaded {filename} to S3.")
     except ClientError as e:
         error = f"AWS Login Error: {e}", logging.error
@@ -138,12 +140,17 @@ def s3_upload(
         error = f"Unable to get AWS Credentials, check -g (get secrets)", logging.error
         output(error, logging.error)
         sys.exit(1)
+    except FileNotFoundError as e:
+        error = f"Could not find file: {filename}"
+        send_mail(error)
+        sys.exit(1)
     except Exception as e:
         error = f"Catch this better: {type(e)}"
         error += f"{e}"
         output(error, logging.error)
         send_mail(error)
         sys.exit(1)
+    output("Finished S3 Upload")
 
 
 if __name__ == "__main__":
@@ -216,3 +223,5 @@ if __name__ == "__main__":
             sys.exit(0)
         else:  # Default to Upload
             s3_upload(**secrets)
+
+    sys.exit(0)
