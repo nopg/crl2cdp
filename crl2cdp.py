@@ -125,7 +125,7 @@ def s3_upload(
     Upload CRL Files to S3
     """
     crl_and_crt_files = [
-        file for file in os.listdir(folder_path) if file.endswith((".crl", ".crt"))
+        file for file in os.listdir(crl_folder_path) if file.endswith((".crl", ".crt"))
     ]
 
     try:
@@ -133,11 +133,12 @@ def s3_upload(
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
         )
-        s3 = session.resource("s3")
+        s3 = session.client("s3")
         for filename in crl_and_crt_files:
-            with open(filename, "rb") as data:
-                s3.Bucket(s3_bucket_name).put_object(Key=filename, Body=data)
-                output(f"Uploaded {filename} to S3.")
+            # with open(filename, "rb") as data:
+            #     s3.Bucket(s3_bucket_name).put_object(Key=filename, Body=data)
+            s3.upload_file(filename, s3_bucket_name, filename)
+            output(f"Uploaded {filename} to S3.")
         # bucket_names = s3_get_bucket_names(s3)
     except ClientError as e:
         output(f"AWS Login Error: {e}", logging.error)
