@@ -6,7 +6,7 @@ from botocore.exceptions import ClientError, NoCredentialsError
 
 ############ EDIT BELOW ####################################################################
 s3_bucket_name = "mybucketname"
-crl_folder_path = r"c:\CDP"
+crl_folder_path = r"."
 
 email_server = "smtp.office365.com"
 email_port = 587
@@ -31,14 +31,14 @@ def set_secrets():
     print("\nJust hit enter if keeping existing secret.\n")
     aws_access_key_id = input("AWS Access Key ID: ")
     aws_secret_access_key = input("AWS Secret Key: ")
-    email_password = input("Email Password: ")
+    # email_password = input("Email Password: ")
 
     if aws_access_key_id:
         keyring.set_password("crl2cdp", "aws_access_key_id", aws_access_key_id)
     if aws_secret_access_key:
         keyring.set_password("crl2cdp", "aws_secret_access_key", aws_secret_access_key)
-    if email_password:
-        keyring.set_password("crl2cdp", "email_password", email_password)
+    # if email_password:
+    #     keyring.set_password("crl2cdp", "email_password", email_password)
 
     output("All secrets have been updated. Use --get if you need to confirm them.\n")
 
@@ -50,7 +50,7 @@ def get_secrets():
     secrets["aws_secret_access_key"] = keyring.get_password(
         "crl2cdp", "aws_secret_access_key"
     )
-    secrets["email_password"] = keyring.get_password("crl2cdp", "email_password")
+    # secrets["email_password"] = keyring.get_password("crl2cdp", "email_password")
 
     return secrets
 
@@ -68,7 +68,7 @@ def delete_secrets():
         try:
             keyring.delete_password("crl2cdp", "aws_access_key_id")
             keyring.delete_password("crl2cdp", "aws_secret_access_key")
-            keyring.delete_password("crl2cdp", "email_password")
+            # keyring.delete_password("crl2cdp", "email_password")
             print(
                 "\nAll secrets used by crl2cdp have been removed from the OS Keychain/Credential Manager.\n"
             )
@@ -89,14 +89,14 @@ def send_mail(message):
     context = ssl.create_default_context()
 
     # Prepare variables
-    email_password = keyring.get_password("crl2cdp", "email_password")
+    # email_password = keyring.get_password("crl2cdp", "email_password")
     message = f"Subject: {email_subject}\n\n\n{message}\n\n\n"
 
     # Create Connection, uncomment server.login() if using authentication.
     try:
         with smtplib.SMTP(email_server, email_port) as server:
             server.starttls(context=context)
-            server.login(email_from, email_password)
+            # server.login(email_from, email_password)
             server.sendmail(email_from, email_recipient, message)
             output(f"Email sent to {email_recipient}.")
     except smtplib.SMTPAuthenticationError as e:
@@ -104,22 +104,14 @@ def send_mail(message):
         message += f"\nError was: \n{e}\n{type(e)}"
     except Exception as e:
         message = "\n\nFAILED sending email, please check email settings.\n"
-        message += f"\nError was: \n{e}\n{type(e)}"
+        message += f"\nError was, catch this better: \n{e}\n{type(e)}"
         logging.error(message)
         print(message)
 
 
-# def s3_get_bucket_names(s3):
-#     buckets = s3.buckets.all()
-#     names = []
-#     for bucket in buckets:
-#         names.append(bucket.name)
-
-#     return names
-
-
 def s3_upload(
-    aws_access_key_id: str, aws_secret_access_key: str, email_password: str
+    aws_access_key_id: str,
+    aws_secret_access_key: str,
 ) -> None:
     """
     Upload CRL Files to S3
@@ -135,16 +127,22 @@ def s3_upload(
         )
         s3 = session.client("s3")
         for filename in crl_and_crt_files:
-            # with open(filename, "rb") as data:
-            #     s3.Bucket(s3_bucket_name).put_object(Key=filename, Body=data)
             s3.upload_file(filename, s3_bucket_name, filename)
             output(f"Uploaded {filename} to S3.")
-        # bucket_names = s3_get_bucket_names(s3)
     except ClientError as e:
-        output(f"AWS Login Error: {e}", logging.error)
+        error = f"AWS Login Error: {e}", logging.error
+        output(error, logging.error)
+        send_mail(error)
         sys.exit(1)
     except NoCredentialsError as e:
-        output(f"Unable to get AWS Credentials, check -g (get secrets)", logging.error)
+        error = f"Unable to get AWS Credentials, check -g (get secrets)", logging.error
+        output(error, logging.error)
+        sys.exit(1)
+    except Exception as e:
+        error = f"Catch this better: {type(e)}"
+        error += f"{e}"
+        output(error, logging.error)
+        send_mail(error)
         sys.exit(1)
 
 
@@ -206,8 +204,7 @@ if __name__ == "__main__":
                 "\nError, unable to find all secrets, please run with --setup to configure these variables.\n"
             )
             sys.exit(0)
-        # s3_upload(**secrets)
-        send_mail("WHY HELLO THERE!!!")
+        s3_upload(**secrets)
     elif args.delete:
         delete_secrets()
     else:
