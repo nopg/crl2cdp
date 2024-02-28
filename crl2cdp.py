@@ -95,7 +95,7 @@ def send_mail(message):
     # Create Connection, uncomment server.login() if using authentication.
     try:
         with smtplib.SMTP(email_server, email_port) as server:
-            server.starttls(context=context)
+            # server.starttls(context=context)
             # server.login(email_from, email_password)
             server.sendmail(email_from, email_recipient, message)
             output(f"Email sent to {email_recipient}.")
